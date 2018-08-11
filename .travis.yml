@@ -19,25 +19,29 @@ cache:
 
 env:
   global:
-  - BINARYBUILDER_DOWNLOADS_CACHE=downloads
-  - BINARYBUILDER_AUTOMATIC_APPLE=true
-#  matrix:
-#  - TARGET=x86_64-linux-gnu
+    - BINARYBUILDER_DOWNLOADS_CACHE=downloads
+    - BINARYBUILDER_AUTOMATIC_APPLE=true
+  matrix:
+    - TARGET=x86_64-linux-gnu
+    - TARGET=i686-linux-gnu
+    - TARGET=arm-linux-gnueabihf
+    - TARGET=powerpc64le-linux-gnu
+    - TARGET=x86_64-apple-darwin14
 
 sudo: required
 
-#jobs:
-#  include:
-#  - stage: regenerate build.jl
-#    script: julia --color=yes build_tarballs.jl --only-buildjl
-#    if: tag IS present
+jobs:
+  include:
+  - stage: regenerate build.jl
+    script: julia --color=yes build_tarballs.jl --only-buildjl
+    if: tag IS present
 
 before_script:
   - julia -e 'VERSION >= v"0.7-" && exit(); Pkg.clone("https://github.com/JuliaPackaging/BinaryBuilder.jl"); Pkg.build("BinaryBuilder");'
   - julia -e 'VERSION < v"0.7-" && exit(); using Pkg; Pkg.API.clone("https://github.com/JuliaPackaging/BinaryBuilder.jl"); Pkg.API.checkout("BinaryProvider", "master"); Pkg.API.build("BinaryBuilder");'
 
 script:
-  - julia --color=yes build_tarballs.jl
+  - julia --color=yes build_tarballs.jl $TARGET
 
 deploy:
   provider: releases
