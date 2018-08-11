@@ -75,6 +75,7 @@ END
 
 # Patch silock source file
 patch -l ${CURRENTFILE}.orig $WORKSPACE/silock.c.patch -o ${CURRENTFILE}
+fi
 
 
 
@@ -97,8 +98,8 @@ END
 # Patch silock Makefile
 patch -l ${CURRENTFILE}.orig $WORKSPACE/silock-Makefile.patch -o ${CURRENTFILE}
 
-fi
 
+# Finally, finish making library
 make VERBOSE=1
 make install
 """
