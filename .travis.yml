@@ -1,55 +1,43 @@
 language: julia
 os:
-  - linux
+- linux
 julia:
-  - 0.6
+- 0.6
 notifications:
   email: false
 git:
   depth: 99999999
 cache:
   directories:
-    - downloads
+  - downloads
 env:
   global:
-    - BINARYBUILDER_DOWNLOADS_CACHE=downloads
-    - BINARYBUILDER_AUTOMATIC_APPLE=true
-  # Our build takes too long for one job, so split targets across multiple jobs
+  - BINARYBUILDER_DOWNLOADS_CACHE=downloads
+  - BINARYBUILDER_AUTOMATIC_APPLE=true
   matrix:
-    - TARGET=x86_64-linux-gnu
-    - TARGET=i686-linux-gnu
-    - TARGET=aarch64-linux-gnu
-    - TARGET=arm-linux-gnueabihf
-    # ppc64le isn't working right now. :(
-    #- TARGET=powerpc64le-linux-gnu
-    - TARGET=x86_64-apple-darwin14
-    - TARGET=x86_64-w64-mingw32
-    - TARGET=i686-w64-mingw32
+  - TARGET=x86_64-linux-gnu
 sudo: required
-
 jobs:
   include:
-    - stage: regenerate build.jl
-      script: julia --color=yes build_tarballs.jl --only-buildjl
-      if: tag IS present
-
-# Before anything else, get the latest versions of things
+  - stage: regenerate build.jl
+    script: julia --color=yes build_tarballs.jl --only-buildjl
+    if: tag IS present
 before_script:
-  - julia -e 'Pkg.clone("https://github.com/JuliaPackaging/BinaryProvider.jl")'
-  - julia -e 'Pkg.clone("https://github.com/JuliaPackaging/BinaryBuilder.jl"); Pkg.build()'
-
+- julia -e 'VERSION >= v"0.7-" && exit(); Pkg.clone("https://github.com/JuliaPackaging/BinaryBuilder.jl");
+  Pkg.build("BinaryBuilder");'
+- julia -e 'VERSION < v"0.7-" && exit(); using Pkg; Pkg.API.clone("https://github.com/JuliaPackaging/BinaryBuilder.jl");
+  Pkg.API.checkout("BinaryProvider", "master"); Pkg.API.build("BinaryBuilder");'
 script:
-  - julia --color=yes build_tarballs.jl $TARGET
-
+- julia --color=yes build_tarballs.jl $TARGET
 deploy:
   provider: releases
   api_key:
-    # Note; this api_key is only valid for staticfloat/IpoptBuilder; you need
+    # Note; this api_key is only valid for jgoldfar/SiloBuilder; you need
     # to make your own: https://docs.travis-ci.com/user/deployment/releases/
-    secure: d0STjPK8ZFlPswJnyw/wd4d41KhbFpmOukyEDCK6Do8a0hlxqQbS8cNNjUozIkFFaVVCZuVze1MviDOSjQLVWA9KIlUmlOPvnPEiH7AuJE7DMJQcEK9sXXGOGHH9dj4UPdJFVWVG7LuGUgPjfZ9JDRS2tpwNfa0Xj81lAImNY7J8HxaG7Gp3QinSHDWN6aoHwcuKecsLCWAfSf8Te1PuR6qRRIRXD0+jUP94K8luDkb3Sh/EkarMLW6CibV41yt9lWepumxAyacO0qEuayIM8SKeHwhsHXK/QGwdMn7vRO22nSvuEmLvBmlHRoqaycmQdbf601FK3DzQB7Nk09MchhTsjkQbbJyL04lCgJAq4QBl/8/ElY22G0IjfQoy0A3qBsYimBGolm/1NfFOVG8ANv0rFX5Kks8UezobsMjpdexvTO9naQ4mMlwVaOXL+dsTSTInmNEB+ikWqeudLFrfGZEIHpH3xr5r1SzycgpZYu1pcBi72soVQTC1UcUIqwqTTgfEX4cI0hPeV78P62PGng01T/Tz+l2NR7AEXyG45DPg1yPhY/PkuJCNbUdXmQY3d5bmnilmTB45Cq2W882Gd4Oddk2xrjQVmkXJe0vkkmFuVaoYd6B/207+x/cDEDsQ3RUeVpAXOE2OA+4TCiKme39pgAB97Ti0/YQlojANCeM=
+    secure: UFjvHFZup4HH7JHHhPWQHrHwIAtIxbUfDqpJGxKPbO+IaxcOFahlaYx7f/4j9+/6kbWIJnSfWQg1Etue93ac/+z4BZhrlPYwN4OEhJRJeeJrVXP3BKuC17xGfCE/wpS2DxzHaID/DkEc9Pl7Cpe3n0BEKSyHD0KP+ge9k1bgPEmgeHcQKuTbLbdKrK/gJFnhxMBvobXbnXFAQx5NWUDkJLr4vzTUylVRceY07YPJusZ7PeribmQZRhiExZANnJyLLXZ7OK6JOUAZ7eVOfXfEVCQhGEjEXN4yce7BNjsp/fkk3e2tvrzfZvBH9oyEKcS44q8e2GOG/xTYfmrUpeUY5tYwh5pyv240ZD29PwQgtYNJE+L/w37OWcufIGN1zffz7oXKBUdFUOIwIdTcrPCsbjo9yGeGzZmSYfLbZrRkzsn3kPx21zc0i+6AIqIxY/u/DpU0FBp3JiXthkrusZSuRGA5QssFOP2uwNmhoE2vj/2t0+PUo5IZuox3q0QamOFsF3FV0WRVVu6DUm34k3FvEqHuOX7hn++1RLZvqbM0jqpFQBrWxdwd4C8YvelnMBYV+xuqO4fUAlbIiHruK01UrIsWg8j4jdC0RHuUkVfW4kywGnzTskCJhH3n4BPGtQXmOgf9gjFol+TXRD8z0d1YGlwBgMgDaPnxxzpydIKHLY8=
   file_glob: true
   file: products/*
   skip_cleanup: true
   on:
-    repo: staticfloat/IpoptBuilder
+    repo: jgoldfar/SiloBuilder
     tags: true
